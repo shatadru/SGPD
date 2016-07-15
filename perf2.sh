@@ -10,7 +10,7 @@ if [ -n "$2" ]; then
 fi
 
 echo "Start collecting data."
-echo "Running for approximately " $(($ITERATION * $INTERVAL)) " seconds"
+echo "Running for $ITERATION times, after $INTERVAL seconds interval"
 
 #ITERATION=$((ITERATION / 2))
 rm -rf /tmp/*.out
@@ -18,8 +18,19 @@ rm -rf /tmp/*.out
 # One time data
 #~~~
 cat /proc/cpuinfo >> /tmp/cpu.out
-dmesg >> /tmp/dmesg.out
+dmesg >> /tmp/dmesg1.out
 #~~~
+
+function end () {
+dmesg >> /tmp/dmesg2.out
+#Creating tarball of outputs
+FILENAME="outputs-`date +%d%m%y_%H%M%S`.tar.bz2"
+tar -cjvf "$FILENAME" /tmp/*.out
+echo "Please upload the file:" $FILENAME
+exit
+}
+trap end SIGHUP SIGINT SIGTERM
+
 
 
 #~~~ Continuous collection by will run outside loop ~~~
@@ -37,7 +48,7 @@ while true
 do
 	if((CURRENT_ITERATION <= ${ITERATION}))
 	then	
-		echo "Collecting data : Iteration "$(($CURRENT_ITERATION))
+		echo "$(date +%T): Collecting data : Iteration "$(($CURRENT_ITERATION))
 		date >> /tmp/top.out; top -n 1 -b >> /tmp/top.out
 		date >> /tmp/iotop.out; iotop -n 1 -b >> /tmp/iotop.out
 		date >> /tmp/mem.out; cat /proc/meminfo >> /tmp/mem.out
@@ -55,8 +66,7 @@ do
 	
 done
 #~~~ Collection End ~~~
+end
 
-#Creating tarball of outputs
-FILENAME="outputs-`date +%d%m%y_%H%M%S`.tar.bz2"
-tar -cjvf "$FILENAME" /tmp/*.out
-echo "Please upload the file:" $FILENAME
+
+

@@ -54,6 +54,7 @@ do
 		date >> /tmp/mem.out; cat /proc/meminfo >> /tmp/mem.out
 		date >> /tmp/free.out; free -m >> /tmp/free.out
 		date >> /tmp/psf.out; ps auxf >> /tmp/psf.out
+		date >> /tmp/ps_auxwwwm.out; ps auxwwwm >> /tmp/ps_auxwwwm.out
 		date >> /tmp/ps.out  ; ps aux >> /tmp/ps.out  
 		date >> /tmp/pidstat.out ; pidstat >> /tmp/pidstat.out &
 		((CURRENT_ITERATION++))

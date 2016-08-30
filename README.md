@@ -9,7 +9,7 @@ Run the script as :
        Interval----  |
                      -----Number of iterations (300 X 1 sec = 5 mins )
   ~~~
-  ## Please note that the script needs to be run only when you are facing the issue.
+# Please note that the script needs to be run only when you are facing the issue.
 
 - By default the script will run in interval of 2 seconds and 30 times.
 

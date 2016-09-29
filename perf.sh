@@ -96,7 +96,7 @@ trap end SIGHUP SIGINT SIGTERM
 
 
 #~~~ Continuous collection by will run outside loop ~~~
-date >> /tmp/vmstat.out; vmstat $INTERVAL $ITERATION >> /tmp/vmstat.out &
+#date >> /tmp/vmstat.out; vmstat $INTERVAL $ITERATION >> /tmp/vmstat.out &
 if [ "$iostatold" -eq "1" ]; then
 	iostat -t  -x $INTERVAL $ITERATION >> /tmp/iostat.out &
 	else

@@ -628,7 +628,7 @@ ps aux > $DIR/ps
 ipcs -a > $DIR/ipcs_a
 ipcs -l > $DIR/ipcs_l
 ipcs -u > $DIR/ipcs_u
-df -l|grep -i -e tmpfs -e Available > df_tmpfs
+df -l|grep -i -e tmpfs -e Available > $DIR/df_tmpfs
 
 echo;echo "Creating tar ball..."
 echo "Please standby..."

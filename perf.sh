@@ -56,7 +56,7 @@ if [ $v -ge "6" ];then
 pkg_check iotop
 iotopyes=1
 else
-echo "iotop command will not be collected as system is RHEL 5 or lower"
+echo "iotop and pidstat command will not be collected as system is RHEL 5 or lower"
 iotopyes=0
 iostatold=1
 fi
@@ -118,13 +118,13 @@ do
 		date >> /tmp/top.out; top -n 1 -b >> /tmp/top.out
 		if [ "$iotopyes" -eq "1" ]; then
 			date >> /tmp/iotop.out; iotop -n 1 -b >> /tmp/iotop.out
+			date >> /tmp/pidstat.out ; pidstat >> /tmp/pidstat.out &
 		fi
 		date >> /tmp/mem.out; cat /proc/meminfo >> /tmp/mem.out
 		date >> /tmp/free.out; free -m >> /tmp/free.out
 		date >> /tmp/psf.out; ps auxf >> /tmp/psf.out
 		date >> /tmp/ps_auxwwwm.out; ps auxwwwm >> /tmp/ps_auxwwwm.out
 		date >> /tmp/ps.out  ; ps aux >> /tmp/ps.out  
-		date >> /tmp/pidstat.out ; pidstat >> /tmp/pidstat.out &
 		((CURRENT_ITERATION++))
 		sleep $INTERVAL
 		

@@ -2,7 +2,7 @@
 #
 #  Author : Shatadru Bandyopadhyay
 #
-# this script collects time,strace of few commands at a 1 second interval
+# this script collects time,strace of few commands 
 # the concept is to find out if there is any lag from OS end and what is system call which is taking time
 #
 # Licenced under GPLv3

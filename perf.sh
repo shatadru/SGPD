@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+perf=1
 lsbyes=1
 iotopyes=0
 iostatold=0
@@ -31,6 +32,14 @@ if [ "$?" -ne "0" ];then
 		exit
 		elif [ "$1" == "lsb_release" ]; then 
 		lsbyes=0
+		elif  [ "$1" == "perf" ]; then 
+		echo "perf is not installed, do you want to skip collection of perf data(Y/N)"
+		read a
+			if  [ "$a" == "Y" ] ||  [ "$a" == "y" ] ||  [ "$a" == "Yes" ] ; then
+			perf=0
+			sleep 1;
+			else
+			echo "Install $1 package (#yum install $1) and run the script again. exiting..."
 		else
 		echo "Install $1 package (#yum install $1) and run the script again. exiting..."
 		exit
@@ -41,7 +50,8 @@ fi
 
 pkg_check sar
 pkg_check lsb_release
-
+pkg_check perf
+pkg_check kernel-debuginfo-`uname -r`
 ## OS CHECK ##
 
 if [ $lsbyes -eq "1" ]; then
@@ -82,12 +92,24 @@ rm -rf /tmp/*.out
 cat /proc/cpuinfo >> /tmp/cpu.out
 dmesg >> /tmp/dmesg1.out
 #~~~
+# One time perf 
+if [ "$perf" == "1" ]; then
+	tempdirname=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1`
+	mkdir /tmp/$tempdirname/
+	DIR=/tmp/$tempdirname/
+	echo "Collecting perf data"
+	mkdir -p $DIR"perf"; cd $_
+	perf record -a -g sleep 20
+	perf archive
+	cd ..
+fi
+#~~~
 
 function end () {
 dmesg >> /tmp/dmesg2.out
 #Creating tarball of outputs
 FILENAME="outputs-`date +%d%m%y_%H%M%S`.tar.bz2"
-tar -cjvf "$FILENAME" /tmp/*.out
+tar -cjvf "$FILENAME" /tmp/*.out $DIR"perf"
 echo "Please upload the file:" $FILENAME
 exit
 }

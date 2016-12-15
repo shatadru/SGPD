@@ -20,28 +20,35 @@ perf=1
 lsbyes=1
 iotopyes=0
 iostatold=0
-function pkg_check(){
+ver=`uname -r`
+
+function com_check(){
 which $1 > /dev/null 2> /dev/null
 if [ "$?" -ne "0" ];then
 	echo Command : $1 Not found...
 	if [ "$1" == "iotop" ]; then
 		echo "Install iotop package (#yum install iotop) and run the script again. exiting..."
 		exit
-		elif [ "$1" == "sar" ]; then 
+	elif [ "$1" == "sar" ]; then 
 		echo "Install systat package (#yum install sysstat) and run the script again. exiting..."
 		exit
-		elif [ "$1" == "lsb_release" ]; then 
+	elif [ "$1" == "lsb_release" ]; then 
 		lsbyes=0
-		elif  [ "$1" == "perf" ]; then 
-		echo "perf is not installed, do you want to skip collection of perf data(Y/N)"
-		read a
-			if  [ "$a" == "Y" ] ||  [ "$a" == "y" ] ||  [ "$a" == "Yes" ] ; then
+	elif  [ "$1" == "perf" ]; then 
+		echo "$1 is not installed"
+		echo "Refer : https://access.redhat.com/solutions/386343"
+		echo "Do you want to skip collection of perf data and continue ? (Y/N)"
+		read a		
+		if  [ "$a" == "Y" ] ||  [ "$a" == "y" ] ||  [ "$a" == "Yes" ] ; then
 			perf=0
 			sleep 1;
-			else
-			echo "Install $1 package (#yum install $1) and run the script again. exiting..."
-			fi
 		else
+			echo "Install $1 package (#yum install $1) and run the script again. exiting..."
+			exit
+		fi
+
+
+	else
 		echo "Install $1 package (#yum install $1) and run the script again. exiting..."
 		exit
 	fi
@@ -49,10 +56,30 @@ fi
 
 }
 
-pkg_check sar
-pkg_check lsb_release
-pkg_check perf
-pkg_check kernel-debuginfo-`uname -r`
+function pkg_check() {
+rpm -q $1 > /dev/null 2> /dev/null
+if [ "$?" -ne "0" ];then
+	echo Package : $1 Not found...
+	if  [ "$1" == "kernel-debuginfo-$ver" ]; then 
+		echo "Refer : https://access.redhat.com/solutions/386343"
+		echo "Do you want to skip collection of perf data and continue ? (Y/N)"
+		read a		
+		if  [ "$a" == "Y" ] ||  [ "$a" == "y" ] ||  [ "$a" == "Yes" ] ; then
+			perf=0
+			sleep 1;
+		else
+			echo "Install $1 package (#yum install $1) and run the script again. exiting..."
+			echo "Refer : [How can I download or install debuginfo packages for RHEL systems?] https://access.redhat.com/solutions/9907"
+			exit
+		fi
+	fi	
+fi
+}
+
+com_check sar
+com_check lsb_release
+com_check perf
+pkg_check kernel-debuginfo-$ver
 ## OS CHECK ##
 
 if [ $lsbyes -eq "1" ]; then
@@ -64,7 +91,7 @@ fi
 v=`echo $version|cut -f1 -d "."`
 
 if [ $v -ge "6" ];then
-pkg_check iotop
+com_check iotop
 iotopyes=1
 else
 echo "iotop and pidstat command will not be collected as system is RHEL 5 or lower"
@@ -88,6 +115,23 @@ echo "Running for $ITERATION times, after $INTERVAL seconds interval"
 #ITERATION=$((ITERATION / 2))
 rm -rf /tmp/*.out
 
+### End function ###
+function end () {
+dmesg >> /tmp/dmesg2.out
+#Creating tarball of outputs
+FILENAME="outputs-`date +%d%m%y_%H%M%S`.tar.bz2"
+if [ "$perf" == "1" ]; then
+	tar -cjvf "$FILENAME" /tmp/*.out $DIR"perf"
+else
+	tar -cjvf "$FILENAME" /tmp/*.out
+fi
+echo "Please upload the file:" $FILENAME
+exit
+}
+trap end SIGHUP SIGINT SIGTERM
+
+
+
 # One time data
 #~~~
 cat /proc/cpuinfo >> /tmp/cpu.out
@@ -106,15 +150,6 @@ if [ "$perf" == "1" ]; then
 fi
 #~~~
 
-function end () {
-dmesg >> /tmp/dmesg2.out
-#Creating tarball of outputs
-FILENAME="outputs-`date +%d%m%y_%H%M%S`.tar.bz2"
-tar -cjvf "$FILENAME" /tmp/*.out $DIR"perf"
-echo "Please upload the file:" $FILENAME
-exit
-}
-trap end SIGHUP SIGINT SIGTERM
 
 
 
@@ -159,5 +194,3 @@ do
 done
 #~~~ Collection End ~~~
 end
-
-

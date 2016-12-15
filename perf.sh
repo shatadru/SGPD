@@ -40,6 +40,7 @@ if [ "$?" -ne "0" ];then
 			sleep 1;
 			else
 			echo "Install $1 package (#yum install $1) and run the script again. exiting..."
+			fi
 		else
 		echo "Install $1 package (#yum install $1) and run the script again. exiting..."
 		exit

@@ -16,12 +16,77 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-perf=1
+
+# Initiating variables...
+
+perf=0
 lsbyes=1
 iotopyes=0
 iostatold=0
 ver=`uname -r`
+ITERATION=60 # default 
+INTERVAL=1   # default 
 
+# Command line arg handling #
+
+args=( "$@" )
+numarg=$#
+argnum=$((numarg-1))
+
+for i in `seq 0 "$argnum"`
+	do
+	key=${args[$i]}
+	case $key in
+    		-p|--perf)
+    			perf="1"
+		;;
+    		-h|--help)
+
+			help="1"
+		;;
+		-v|--verbose)
+
+			verbose="1"
+		;;
+		-n|--non-interactive)
+
+			noninteractive="1"
+		;;
+    		-w|--no-warn|--nowarn)
+    			no_warn="1"
+		;;
+
+ 		*)
+    		;;
+	esac
+done
+for i in `seq 0 "$argnum"`
+        do
+        key1=${args[$i]}
+	case $key1 in  ''|*[!0-9]*) 
+				#do nothing
+				;;     
+				*) ITERATION=${args[$i]}; INTERVAL=${args[(($i+1))]}; break
+				;; 
+	esac
+done
+
+
+case $INTERVAL in
+    ''|*[!0-9]*) echo "Error while parsing command line argument, check help" ; exit ;;
+    *)  ;;
+esac
+
+# Command line arg handling #
+
+
+# Creating temporary directory to save the files
+tempdirname=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1`
+mkdir /tmp/$tempdirname/
+DIR=/tmp/$tempdirname/
+
+
+# Function to check if a command is available 
 function com_check(){
 which $1 > /dev/null 2> /dev/null
 if [ "$?" -ne "0" ];then
@@ -56,6 +121,8 @@ fi
 
 }
 
+
+# Function to check if a package is available 
 function pkg_check() {
 rpm -q $1 > /dev/null 2> /dev/null
 if [ "$?" -ne "0" ];then
@@ -76,10 +143,15 @@ if [ "$?" -ne "0" ];then
 fi
 }
 
+#Checking for required packages / commands 
 com_check sar
 com_check lsb_release
-com_check perf
-pkg_check kernel-debuginfo-$ver
+if [ "$perf" -eq "1" ]; then
+
+	com_check perf
+#uncommet this VVV TODO
+	#pkg_check kernel-debuginfo-$ver
+fi
 ## OS CHECK ##
 
 if [ $lsbyes -eq "1" ]; then
@@ -99,33 +171,26 @@ iotopyes=0
 iostatold=1
 fi
 
-ITERATION=30
-INTERVAL=2  # default interval
-if [ -n "$1" ]; then
-     ITERATION=$2
-fi
-
-if [ -n "$2" ]; then
-     INTERVAL=$1
-fi
 
 echo "Start collecting data."
 echo "Running for $ITERATION times, after $INTERVAL seconds interval"
 
 #ITERATION=$((ITERATION / 2))
-rm -rf /tmp/*.out
+
 
 ### End function ###
 function end () {
-dmesg >> /tmp/dmesg2.out
+dmesg >> $DIR/dmesg2.out
 #Creating tarball of outputs
 FILENAME="outputs-`date +%d%m%y_%H%M%S`.tar.bz2"
 if [ "$perf" == "1" ]; then
-	tar -cjvf "$FILENAME" /tmp/*.out $DIR"perf"
+	tar -v -cjvf "$FILENAME" $DIR/*.out $DIR"perf"
 else
-	tar -cjvf "$FILENAME" /tmp/*.out
+	tar -cjvf "$FILENAME" $DIR/*.out
 fi
 echo "Please upload the file:" $FILENAME
+rm -rf "$DIR"/*
+rmdir "$DIR"
 exit
 }
 trap end SIGHUP SIGINT SIGTERM
@@ -134,19 +199,17 @@ trap end SIGHUP SIGINT SIGTERM
 
 # One time data
 #~~~
-cat /proc/cpuinfo >> /tmp/cpu.out
-dmesg >> /tmp/dmesg1.out
+cat /proc/cpuinfo >> $DIR/cpu.out
+dmesg >> $DIR/dmesg1.out
 #~~~
 # One time perf 
 if [ "$perf" == "1" ]; then
-	tempdirname=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1`
-	mkdir /tmp/$tempdirname/
-	DIR=/tmp/$tempdirname/
+	
 	echo "Collecting perf data"
 	mkdir -p $DIR"perf"; cd $_
-	perf record -a -g sleep 20
+	perf record -a -g sleep 1
 	perf archive
-	cd ..
+	cd -
 fi
 #~~~
 
@@ -154,15 +217,15 @@ fi
 
 
 #~~~ Continuous collection by will run outside loop ~~~
-#date >> /tmp/vmstat.out; vmstat $INTERVAL $ITERATION >> /tmp/vmstat.out &
+#date >> $DIR/vmstat.out; vmstat $INTERVAL $ITERATION >> $DIR/vmstat.out &
 if [ "$iostatold" -eq "1" ]; then
-	iostat -t  -x $INTERVAL $ITERATION >> /tmp/iostat.out &
+	iostat -t  -x $INTERVAL $ITERATION >> $DIR/iostat.out &
 	else
-	iostat -t -z -x $INTERVAL $ITERATION >> /tmp/iostat.out &
+	iostat -t -z -x $INTERVAL $ITERATION >> $DIR/iostat.out &
 fi
-sar $INTERVAL $ITERATION >> /tmp/sar.out &
-sar -A $INTERVAL $ITERATION -p >> /tmp/sarA.out &
-mpstat $INTERVAL $ITERATION -P ALL >> /tmp/mpstat.out &
+sar $INTERVAL $ITERATION >> $DIR/sar.out &
+sar -A $INTERVAL $ITERATION -p >> $DIR/sarA.out &
+mpstat $INTERVAL $ITERATION -P ALL >> $DIR/mpstat.out &
 #~~~
 
 # ~~~ Loop begins to collect data ~~~
@@ -173,16 +236,16 @@ do
 	if((CURRENT_ITERATION <= ${ITERATION}))
 	then	
 		echo "$(date +%T): Collecting data : Iteration "$(($CURRENT_ITERATION))
-		date >> /tmp/top.out; top -n 1 -b >> /tmp/top.out
+		date >> $DIR/top.out; top -n 1 -b >> $DIR/top.out
 		if [ "$iotopyes" -eq "1" ]; then
-			date >> /tmp/iotop.out; iotop -n 1 -b >> /tmp/iotop.out
-			date >> /tmp/pidstat.out ; pidstat >> /tmp/pidstat.out &
+			date >> $DIR/iotop.out; iotop -n 1 -b >> $DIR/iotop.out
+			date >> $DIR/pidstat.out ; pidstat >> $DIR/pidstat.out &
 		fi
-		date >> /tmp/mem.out; cat /proc/meminfo >> /tmp/mem.out
-		date >> /tmp/free.out; free -m >> /tmp/free.out
-		date >> /tmp/psf.out; ps auxf >> /tmp/psf.out
-		date >> /tmp/ps_auxwwwm.out; ps auxwwwm >> /tmp/ps_auxwwwm.out
-		date >> /tmp/ps.out  ; ps aux >> /tmp/ps.out  
+		date >> $DIR/mem.out; cat /proc/meminfo >> $DIR/mem.out
+		date >> $DIR/free.out; free -m >> $DIR/free.out
+		date >> $DIR/psf.out; ps auxf >> $DIR/psf.out
+		date >> $DIR/ps_auxwwwm.out; ps auxwwwm >> $DIR/ps_auxwwwm.out
+		date >> $DIR/ps.out  ; ps aux >> $DIR/ps.out  
 		((CURRENT_ITERATION++))
 		sleep $INTERVAL
 		

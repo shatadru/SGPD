@@ -66,7 +66,7 @@ for i in `seq 0 "$argnum"`
 	case $key1 in  ''|*[!0-9]*) 
 				#do nothing
 				;;     
-				*) ITERATION=${args[$i]}; INTERVAL=${args[(($i+1))]}; break
+				*) INTERVAL=${args[$i]}; ITERATION=${args[(($i+1))]}; break
 				;; 
 	esac
 done
@@ -149,7 +149,7 @@ com_check lsb_release
 if [ "$perf" -eq "1" ]; then
 
 	com_check perf
-#uncommet this VVV TODO
+#uncommet this TODO
 	#pkg_check kernel-debuginfo-$ver
 fi
 ## OS CHECK ##
@@ -172,8 +172,7 @@ iostatold=1
 fi
 
 
-echo "Start collecting data."
-echo "Running for $ITERATION times, after $INTERVAL seconds interval"
+
 
 #ITERATION=$((ITERATION / 2))
 
@@ -188,7 +187,9 @@ if [ "$perf" == "1" ]; then
 else
 	tar -cjvf "$FILENAME" $DIR/*.out
 fi
+echo "==================================="
 echo "Please upload the file:" $FILENAME
+echo "==================================="
 rm -rf "$DIR"/*
 rmdir "$DIR"
 exit
@@ -205,15 +206,17 @@ dmesg >> $DIR/dmesg1.out
 # One time perf 
 if [ "$perf" == "1" ]; then
 	
-	echo "Collecting perf data"
+	echo "Collecting perf data for 30 seconds..."
 	mkdir -p $DIR"perf"; cd $_
-	perf record -a -g sleep 1
+	perf record -a -g sleep 30
 	perf archive
+	echo "Collected perf"
 	cd -
 fi
 #~~~
-
-
+echo
+echo "Start collecting data."
+echo "Running for $ITERATION times, after $INTERVAL seconds interval"
 
 
 #~~~ Continuous collection by will run outside loop ~~~
@@ -226,6 +229,7 @@ fi
 sar $INTERVAL $ITERATION >> $DIR/sar.out &
 sar -A $INTERVAL $ITERATION -p >> $DIR/sarA.out &
 mpstat $INTERVAL $ITERATION -P ALL >> $DIR/mpstat.out &
+nfsiostat $INTERVAL $ITERATION  >> $DIR/nfsiostat.out &
 #~~~
 
 # ~~~ Loop begins to collect data ~~~

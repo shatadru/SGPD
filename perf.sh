@@ -1,7 +1,9 @@
 #!/bin/bash
 #  Author : Shatadru Bandyopadhyay
 #         : Ganesh Gore
-#
+# OBTAIN THE LATEST VERSION OF THE SCRIPT AT :  https://github.com/shatadru/SGPD/blob/master/perf.sh
+#                       DIRECT DOWNLOAD LINK : https://raw.githubusercontent.com/shatadru/SGPD/master/perf.sh
+# 
 # Licenced under GPLv3, check LICENSE.txt
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

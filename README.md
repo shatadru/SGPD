@@ -1,15 +1,17 @@
 # SGPD
-Script to Gather Prformance Data
+- Collection of scripts to Gather Prformance Data
 
-Run the script as :
+# perf.sh
+- Collects generic performance data from all subsystem (CPU, Memory, I/O )
+- Run the script as :
   ~~~
-  # bash perf2.sh 1 300
+  # bash perf.sh 1 300
                   ^  ^
                   |  |
        Interval----  |
                      -----Number of iterations (300 X 1 sec = 5 mins )
   ~~~
-# Please note that the script needs to be run only when you are facing the issue.
+*Please note that the script needs to be run only when you are facing the issue.*
 
 - By default the script will run in interval of 2 seconds and 30 times.
 
@@ -24,3 +26,13 @@ Run the script as :
 - It does not capture huge ammount of data like collectl and much easier to use.
 
 - It is licencesed under GNU Public Licence version 3, refer LICENSE.txt
+
+# perf_mem.sh
+- Collects data regarding memory subsystem when run.
+- Can be run when system is facing high memory utilisation to find out the culprit
+~~~
+bash perf_mem.sh
+~~~
+
+# perf_time.sh
+- Collects strace, ptrace, time for some commands, helpful in case all the commands are slow on a system even though there is no high resource utilisation

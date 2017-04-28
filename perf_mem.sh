@@ -627,6 +627,9 @@ mkdir $DIR/proc
 cat /proc/meminfo > $DIR/proc/meminfo
 cat /proc/buddyinfo > $DIR/proc/buddyinfo
 cat /proc/zoneinfo > $DIR/proc/zoneinfo
+cat /proc/slabinfo > $DIR/proc/slabinfo
+
+dmidecode > $DIR/dmidecode
 ps aux > $DIR/ps
 ipcs -a > $DIR/ipcs_a
 ipcs -l > $DIR/ipcs_l
@@ -635,6 +638,6 @@ df -l|grep -i -e tmpfs -e Available > $DIR/df_tmpfs
 
 echo;echo "Creating tar ball..."
 echo "Please standby..."
-sleep 5
+sleep 2
 tar cvf data.tar $DIR > /dev/null
 echo;echo "Plese upload data.tar to the case...."

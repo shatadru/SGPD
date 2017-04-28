@@ -2,6 +2,9 @@
 # Author : Shatadru Bandyopadhyay
 # ps_mem.py is taken from : https://github.com/pixelb/ps_mem
 # ps_mem.py is licenced under GPLv2
+# TODO 1 : Run in loop like perf.sh 
+# TODO 2 : Collect /proc/<PID>/maps
+
 tempdirname=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1`
 mkdir /tmp/$tempdirname/
 

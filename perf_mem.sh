@@ -630,7 +630,11 @@ cat /proc/zoneinfo > $DIR/proc/zoneinfo
 cat /proc/slabinfo > $DIR/proc/slabinfo
 
 dmidecode > $DIR/dmidecode
-ps aux > $DIR/ps
+lsmod >  $DIR/lsmod
+modinfo $(lsmod|cut -f1 -d " "|grep -v Module) > $DIR/modinfo
+uname -a >  $DIR/uname
+ps auxwwwm > $DIR/ps_auxwwwm
+ps aux > $DIR/ps_aux
 ipcs -a > $DIR/ipcs_a
 ipcs -l > $DIR/ipcs_l
 ipcs -u > $DIR/ipcs_u

@@ -3,7 +3,7 @@
 # ps_mem.py is taken from : https://github.com/pixelb/ps_mem
 # ps_mem.py is licenced under GPLv2
 # TODO 1 : Run in loop like perf.sh 
-
+echo "Collecting data related to memory subsystem... Please standby..."
 tempdirname=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1`
 mkdir /tmp/$tempdirname/
 
@@ -638,7 +638,7 @@ ipcs -a > $DIR/ipcs_a
 ipcs -l > $DIR/ipcs_l
 ipcs -u > $DIR/ipcs_u
 df -l|grep -i -e tmpfs -e Available > $DIR/df_tmpfs
-for i in $(ps -e -o pid); do  ps -f $i >>  $DIR/pmap ; cat /proc/$i/maps >> $DIR/pmap ; echo ======================= >>  $DIR/pmap ; done
+for i in $(ps -e -o pid|grep -v PID); do  ps -f $i >>  $DIR/pmap ; cat /proc/$i/maps >> $DIR/pmap ; echo ======================= >>  $DIR/pmap ; done
 
 echo;echo "Creating tar ball..."
 echo "Please standby..."

@@ -638,7 +638,7 @@ ipcs -a > $DIR/ipcs_a
 ipcs -l > $DIR/ipcs_l
 ipcs -u > $DIR/ipcs_u
 df -l|grep -i -e tmpfs -e Available > $DIR/df_tmpfs
-for i in $(ps -e -o pid); do  ps -f $i >>  $DIR/pmap ; cat /proc/$i/maps >> $DIR/pmap ; echo =======================; done
+for i in $(ps -e -o pid); do  ps -f $i >>  $DIR/pmap ; cat /proc/$i/maps >> $DIR/pmap ; echo ======================= >>  $DIR/pmap ; done
 
 echo;echo "Creating tar ball..."
 echo "Please standby..."

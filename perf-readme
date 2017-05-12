@@ -1,0 +1,52 @@
+.\" Manpage for perf.sh.
+.\" Contact sbandyop@redhat.com to correct errors or typos.
+.TH per.sh MAN "13 May 2017" "1.0" "perf.sh man page"
+.SH NAME
+perf.sh \- Collects generic performance data from all subsystem (CPU, Memory, I/O ) 
+.SH SYNOPSIS
+perf.sh [OPTION] [Interval] [Iterations]
+.SH DESCRIPTION
+ Collects generic performance data from all subsystem (CPU, Memory, I/O )
+ 
+1. By default the script will run in interval of 2 seconds and 30 times.
+
+2. This script can be stopped using ctrl+c and still will capture the data.
+
+3. This will collect data like sar, vmstat, iostat, iotop, ps, top and create a tarball inside current directory which can be helpful finding out 
+   reason of high CPU/Memory usage, high load average, high iowait.
+
+4. This script is tested to work in RHEL/CentOS 5,6,7 and Fedora 23,24. You should have tools like systat, iotop installed for the script to work.
+
+5. Tools such as collectl are available which does this better, however it was created keeping simplycity in mind.
+
+6. It does not capture huge ammount of data like collectl and much easier to use.
+
+.SH OPTIONS
+
+-p : Collect perf data perf(1) , Not to be confused with name of this script - perf.sh
+
+-d : Run in daemon mode, for this the script needs to be run using setsid.
+     This is useful when the performance issue is sporadic and can not be reproduced at will
+
+
+        $ setsid ./perf.sh -d 2> /dev/null &
+        
+
+     To end the data collection kill the script with SIGNAL 15
+
+        $ pkill perf.sh         
+   
+.SH SEE ALSO
+ sar(1) free(1) ps(1) iostat(1) iotop(8) 
+
+ https://github.com/shatadru/SGPD 
+
+.SH BUGS
+No known bugs. Report Bugs at : https://github.com/shatadru/SGPD/issues/new
+
+.SH TODO
+Collect network related data apart from stuffs collected by SAR
+
+.SH AUTHOR
+Shatadru Bandyopadhyay (sbandyop@redhat.com)
+

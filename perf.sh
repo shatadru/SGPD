@@ -1,6 +1,6 @@
 #!/bin/bash
-#  Author : Shatadru Bandyopadhyay
-#         : Ganesh Gore
+#  Author / Maintainer : Shatadru Bandyopadhyay sbandyop@redhat.com
+#  Early contribution  : Ganesh Gore            ggore@redhat.com
 #
 # Licenced under GPLv3, check LICENSE.txt
 # This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,10 @@ for i in `seq 0 "$argnum"`
 
 			help="1"
 		;;
+    		-d|--daemon)
+
+			daemon="1"
+		;;
 		-v|--verbose)
 
 			verbose="1"
@@ -60,6 +64,9 @@ for i in `seq 0 "$argnum"`
     		;;
 	esac
 done
+
+# Command line arg parsing #
+
 for i in `seq 0 "$argnum"`
         do
         key1=${args[$i]}
@@ -77,7 +84,8 @@ case $INTERVAL in
     *)  ;;
 esac
 
-# Command line arg handling #
+# Command line arg parsing #
+
 
 
 # Creating temporary directory to save the files
@@ -85,6 +93,52 @@ tempdirname=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1`
 mkdir /tmp/$tempdirname/
 DIR=/tmp/$tempdirname/
 
+### Check if we are run in daemon mode ###
+
+if [ "$daemon" == "1" ]; then
+	mkdir -p /var/lock
+	if [ -f /var/lock/perfsh_started ]; then
+		echo "Lock file exits, checking if perf.sh is already running"
+
+	perfcount=`ps aux|grep -iv grep|grep -i perf.sh|wc -l`
+#	echo ---- $perfcount ----
+#	ps aux|grep -i perf.sh|grep -iv grep 
+		if [ "$perfcount" == "3" ]; then
+			echo "Another instance of perf.sh running... Exiting..."
+			exit
+		elif [ "$perfcount" == "2" ]; then
+			echo "Stale lock file exists, overwritting the same."
+			rm -rf /var/lock/perfsh_started
+			echo $tempdirname > /var/lock/perfsh_started
+			chmod 777 /var/lock/perfsh_started
+
+
+		fi
+	else
+		echo $tempdirname > /var/lock/perfsh_started
+		chmod 777 /var/lock/perfsh_started
+	fi
+
+	
+	# Lets check if perf.sh was started correctly i.e. it's parent is init / systemd
+	ps -f $PPID|egrep "systemd|init" >/dev/null
+	if [ "$?" == "0" ];then
+
+		echo "Starting perf.sh as daemon..."
+		sleep 100
+	else	
+		echo
+		echo "perf.sh was not started to run as daemon"
+		echo
+		echo "Run below command to start perf.sh as daemon :"
+		echo "~~~"
+		echo "# setsid ./perf.sh -d 2> /dev/null &"
+		echo "~~~"
+		echo
+		echo "Exiting..."
+		exit
+	fi	
+fi
 
 # Function to check if a command is available 
 function com_check(){
@@ -196,7 +250,7 @@ exit
 }
 trap end SIGHUP SIGINT SIGTERM
 
-
+function one_time_data_capture() {
 
 # One time data
 #~~~
@@ -217,6 +271,11 @@ fi
 echo
 echo "Start collecting data."
 echo "Running for $ITERATION times, after $INTERVAL seconds interval"
+}
+one_time_data_capture
+
+
+function loop_time_data_capture() {
 
 
 #~~~ Continuous collection by will run outside loop ~~~
@@ -259,5 +318,12 @@ do
 	fi
 	
 done
+
+}
+loop_time_data_capture
+
+
+
+
 #~~~ Collection End ~~~
 end

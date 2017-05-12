@@ -1,7 +1,15 @@
 #!/bin/bash
+<<<<<<< HEAD
 #  Author / Maintainer : Shatadru Bandyopadhyay sbandyop@redhat.com
 #  Early contribution  : Ganesh Gore            ggore@redhat.com
 #
+=======
+#  Author : Shatadru Bandyopadhyay
+#         : Ganesh Gore
+# OBTAIN THE LATEST VERSION OF THE SCRIPT AT :  https://github.com/shatadru/SGPD/blob/master/perf.sh
+#                       DIRECT DOWNLOAD LINK : https://raw.githubusercontent.com/shatadru/SGPD/master/perf.sh
+# 
+>>>>>>> ce8e6ed8eed57c0d4f79a5a88f8e97b96ab9b38b
 # Licenced under GPLv3, check LICENSE.txt
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

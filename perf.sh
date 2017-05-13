@@ -156,57 +156,11 @@ man /tmp/perfsh-readme
 exit
 fi
 
+###################### Function Definations ##########################################################
 
 
-### Check if we are run in daemon mode ###
-
-if [ "$daemon" == "1" ]; then
-	mkdir -p /var/lock
-	if [ -f /var/lock/perfsh_started ]; then
-		echo "Lock file exits, checking if perf.sh is already running"
-
-	perfcount=`ps aux|grep -iv grep|grep -i perf.sh|wc -l`
-#	echo ---- $perfcount ----
-#	ps aux|grep -i perf.sh|grep -iv grep 
-		if [ "$perfcount" == "3" ]; then
-			echo "Another instance of perf.sh running... Exiting..."
-			exit
-		elif [ "$perfcount" == "2" ]; then
-			echo "Stale lock file exists, overwritting the same."
-			rm -rf /var/lock/perfsh_started
-			echo $tempdirname > /var/lock/perfsh_started
-			chmod 777 /var/lock/perfsh_started
-
-
-		fi
-	else
-		echo $tempdirname > /var/lock/perfsh_started
-		chmod 777 /var/lock/perfsh_started
-	fi
-
-	
-	# Lets check if perf.sh was started correctly i.e. it's parent is init / systemd
-	ps -f $PPID|egrep "systemd|init" >/dev/null
-	if [ "$?" == "0" ];then
-
-		echo "Starting perf.sh as daemon..."
-		sleep 100
-	else	
-		echo
-		echo "perf.sh was not started to run as daemon"
-		echo
-		echo "Run below command to start perf.sh as daemon :"
-		echo "~~~"
-		echo "# setsid ./perf.sh -d 2> /dev/null &"
-		echo "~~~"
-		echo
-		echo "Exiting..."
-		exit
-	fi	
-fi
-
-# Function to check if a command is available 
 function com_check(){
+# Function to check if a command is available #
 which $1 > /dev/null 2> /dev/null
 if [ "$?" -ne "0" ];then
 	echo Command : $1 Not found...
@@ -241,8 +195,9 @@ fi
 }
 
 
-# Function to check if a package is available 
 function pkg_check() {
+# Function to check if a package is available 
+
 rpm -q $1 > /dev/null 2> /dev/null
 if [ "$?" -ne "0" ];then
 	echo Package : $1 Not found...
@@ -262,60 +217,9 @@ if [ "$?" -ne "0" ];then
 fi
 }
 
-#Checking for required packages / commands 
-com_check sar
-com_check lsb_release
-if [ "$perf" -eq "1" ]; then
-
-	com_check perf
-#uncommet this TODO
-	#pkg_check kernel-debuginfo-$ver
-fi
-## OS CHECK ##
-
-if [ $lsbyes -eq "1" ]; then
-version=`lsb_release -r|cut -f2`
-else
-version=`cat /etc/redhat-release |cut -f7 -d " "`
-fi
-
-v=`echo $version|cut -f1 -d "."`
-
-if [ $v -ge "6" ];then
-com_check iotop
-iotopyes=1
-else
-echo "iotop and pidstat command will not be collected as system is RHEL 5 or lower"
-iotopyes=0
-iostatold=1
-fi
-
-
-
-
-#ITERATION=$((ITERATION / 2))
-
-
-### End function ###
-function end () {
-dmesg >> $DIR/dmesg2.out
-#Creating tarball of outputs
-FILENAME="outputs-`date +%d%m%y_%H%M%S`.tar.bz2"
-if [ "$perf" == "1" ]; then
-	tar -v -cjvf "$FILENAME" $DIR/*.out $DIR"perf"
-else
-	tar -cjvf "$FILENAME" $DIR/*.out
-fi
-echo "==================================="
-echo "Please upload the file:" $FILENAME
-echo "==================================="
-rm -rf "$DIR"/*
-rmdir "$DIR"
-exit
-}
-trap end SIGHUP SIGINT SIGTERM
-
 function one_time_data_capture() {
+# Runs outside loop :
+# Collects cpuinfo, dmesg  and perf "-p" is given
 
 # One time data
 #~~~
@@ -333,15 +237,13 @@ if [ "$perf" == "1" ]; then
 	cd -
 fi
 #~~~
+
+}
+
+function loop_data_capture() {
 echo
 echo "Start collecting data."
 echo "Running for $ITERATION times, after $INTERVAL seconds interval"
-}
-one_time_data_capture
-
-
-function loop_time_data_capture() {
-
 
 #~~~ Continuous collection by will run outside loop ~~~
 #date >> $DIR/vmstat.out; vmstat $INTERVAL $ITERATION >> $DIR/vmstat.out &
@@ -385,7 +287,192 @@ do
 done
 
 }
-loop_time_data_capture
+
+
+function loop_data_capture_daemon() {
+echo
+echo "Start collecting data."
+echo "Will be running in background as a daemn till terminated manualy, will collect data in $INTERVAL seconds interval"
+echo
+
+
+logger perf.sh: "Start collecting data."
+logger perf.sh: "Will be running in background as a daemon till terminated manualy, will collect data in $INTERVAL seconds interval"
+
+#~~~ Continuous collection by will run outside loop ~~~
+#date >> $DIR/vmstat.out; vmstat $INTERVAL $ITERATION >> $DIR/vmstat.out &
+if [ "$iostatold" -eq "1" ]; then
+	iostat -t  -x $INTERVAL  >> $DIR/iostat.out &
+	else
+	iostat -t -z -x $INTERVAL  >> $DIR/iostat.out &
+fi
+sar $INTERVAL  >> $DIR/sar.out &
+sar -A $INTERVAL  -p >> $DIR/sarA.out &
+mpstat $INTERVAL  -P ALL >> $DIR/mpstat.out &
+nfsiostat $INTERVAL  >> $DIR/nfsiostat.out &
+#~~~
+
+# ~~~ Loop begins to collect data ~~~
+((count=0))
+((CURRENT_ITERATION=1))
+while true
+do
+
+		#echo "$(date +%T): Collecting data : Iteration "$(($CURRENT_ITERATION))
+		date >> $DIR/top.out; top -n 1 -b >> $DIR/top.out
+		if [ "$iotopyes" -eq "1" ]; then
+			date >> $DIR/iotop.out; iotop -n 1 -b >> $DIR/iotop.out
+			date >> $DIR/pidstat.out ; pidstat >> $DIR/pidstat.out &
+		fi
+		date >> $DIR/mem.out; cat /proc/meminfo >> $DIR/mem.out
+		date >> $DIR/free.out; free -m >> $DIR/free.out
+		date >> $DIR/psf.out; ps auxf >> $DIR/psf.out
+		date >> $DIR/ps_auxwwwm.out; ps auxwwwm >> $DIR/ps_auxwwwm.out
+		date >> $DIR/ps.out  ; ps aux >> $DIR/ps.out  
+		((CURRENT_ITERATION++))
+		sleep $INTERVAL
+		
+		continue;
+	
+done
+
+}
+
+
+function end () {
+### End function ###
+# Wraps up things ##
+
+dmesg >> $DIR/dmesg2.out
+
+#Creating tarball of outputs
+
+FILENAME="outputs-`date +%d%m%y_%H%M%S`.tar.bz2"
+if [ "$perf" == "1" ]; then
+	tar -v -cjvf "$FILENAME" $DIR/*.out $DIR"perf"
+else
+	tar -cjvf "$FILENAME" $DIR/*.out
+fi
+
+echo "==================================="
+echo "Please upload the file:" $FILENAME
+echo "==================================="
+
+if [ "$daemon" == "1" ];then
+	logger perf.sh: "==================================="
+	logger perf.sh: "Please upload the file:" $FILENAME
+	logger perf.sh: "==================================="
+fi
+
+rm -rf "$DIR"/*
+rmdir "$DIR"
+
+exit
+}
+
+
+
+function sanity_check () {
+######Checking for required packages / commands 
+com_check sar
+com_check lsb_release
+if [ "$perf" -eq "1" ]; then
+
+	com_check perf
+#uncommet this TODO
+	#pkg_check kernel-debuginfo-$ver
+fi
+## OS CHECK ##
+
+if [ $lsbyes -eq "1" ]; then
+version=`lsb_release -r|cut -f2`
+else
+version=`cat /etc/redhat-release |cut -f7 -d " "`
+fi
+
+v=`echo $version|cut -f1 -d "."`
+
+if [ $v -ge "6" ];then
+	com_check iotop
+	iotopyes=1
+else
+	echo "iotop and pidstat command will not be collected as system is RHEL 5 or lower"
+	iotopyes=0
+	iostatold=1
+fi
+
+}
+
+############################################################################################
+
+sanity_check
+
+
+### Check if we are run in daemon mode ###
+
+if [ "$daemon" == "1" ]; then
+	mkdir -p /var/lock
+	if [ -f /var/lock/perfsh_started ]; then
+		echo "Lock file exits, checking if perf.sh is already running"
+
+	perfcount=`ps aux|grep -iv grep|grep -i perf.sh|wc -l`
+#	echo ---- $perfcount ----
+#	ps aux|grep -i perf.sh|grep -iv grep 
+		if [ "$perfcount" == "3" ]; then
+			echo "Another instance of perf.sh running... Exiting..."
+			exit
+		elif [ "$perfcount" == "2" ]; then
+			echo "Stale lock file exists, overwritting the same."
+			rm -rf /var/lock/perfsh_started
+			echo $tempdirname > /var/lock/perfsh_started
+			chmod 777 /var/lock/perfsh_started
+
+
+		fi
+	else
+		echo $tempdirname > /var/lock/perfsh_started
+		chmod 777 /var/lock/perfsh_started
+	fi
+
+	
+	# Lets check if perf.sh was started correctly i.e. it's parent is init / systemd
+	ps -f $PPID|egrep "systemd|init" >/dev/null
+	if [ "$?" == "0" ];then
+
+		echo "Starting perf.sh as daemon..."
+		
+		trap end SIGHUP SIGINT SIGTERM
+
+		one_time_data_capture
+
+		loop_data_capture_daemon
+
+	else	
+		echo
+		echo "perf.sh was not started to run as daemon"
+		echo
+		echo "Run below command to start perf.sh as daemon :"
+		echo "~~~"
+		echo "# setsid ./perf.sh -d 2> /dev/null &"
+		echo "~~~"
+		echo
+		echo "Exiting..."
+		exit
+	fi	
+fi
+
+
+
+
+#ITERATION=$((ITERATION / 2))
+
+
+
+trap end SIGHUP SIGINT SIGTERM
+
+one_time_data_capture
+
+loop_data_capture
 
 
 

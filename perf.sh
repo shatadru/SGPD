@@ -297,13 +297,16 @@ else
 	INTERVAL=`echo $D_INTERVAL`
 fi
 echo
+echo "Started perf.sh as a daemon with PID $$"
 echo "Start collecting data."
 echo "Will be running in background as a daemn till terminated manualy, will collect data in $INTERVAL seconds interval"
+echo "To terminate run #pkill perf.sh or # kill -15 $$"
 echo
 
-
-logger perf.sh: "Start collecting data."
+logger perf.sh: "Started perf.sh as a daemon with PID $$"
+logger perf.sh: "Start collecting data. PID : $$"
 logger perf.sh: "Will be running in background as a daemon till terminated manualy, will collect data in $INTERVAL seconds interval"
+logger  "To terminate run #pkill perf.sh or # kill -15 $$"
 
 
 #~~~ Continuous collection by will run outside loop ~~~
@@ -355,7 +358,7 @@ dmesg >> $DIR/dmesg2.out
 
 #Creating tarball of outputs
 
-FILENAME="outputs-`date +%d%m%y_%H%M%S`.tar.bz2"
+FILENAME="outputs-`date +%d%m%y_%H%M%S`.tar"
 if [ "$perf" == "1" ]; then
 	tar -v -cvf "$FILENAME" $DIR/*.out $DIR"perf"
 else
@@ -363,12 +366,18 @@ else
 fi
 
 echo "==================================="
-echo "Please upload the file:" $FILENAME
+echo "Please upload the file:" $PWD/$FILENAME
 echo "==================================="
 
 if [ "$daemon" == "1" ];then
+	#Kill child threads
+	for i in $(ps -o pid,ppid,comm --ppid "$$"|tail -n +2|awk '{print $1}'); do
+		kill -9 "$i";
+	done
+	# removing lock file ; exiting cleanly
+	rm -rf /var/lock/perfsh_started
 	logger perf.sh: "==================================="
-	logger perf.sh: "Please upload the file:" $FILENAME
+	logger perf.sh: "Please upload the file:" $PWD/$FILENAME
 	logger perf.sh: "==================================="
 fi
 

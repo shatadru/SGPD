@@ -349,9 +349,9 @@ dmesg >> $DIR/dmesg2.out
 
 FILENAME="outputs-`date +%d%m%y_%H%M%S`.tar.bz2"
 if [ "$perf" == "1" ]; then
-	tar -v -cjvf "$FILENAME" $DIR/*.out $DIR"perf"
+	tar -v -cvf "$FILENAME" $DIR/*.out $DIR"perf"
 else
-	tar -cjvf "$FILENAME" $DIR/*.out
+	tar -cvf "$FILENAME" $DIR/*.out
 fi
 
 echo "==================================="

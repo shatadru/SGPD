@@ -29,7 +29,7 @@ iostatold=0
 ver=`uname -r`
 ITERATION=60 # default 
 INTERVAL=1   # default 
-
+D_INTERVAL=10 # default
 # Command line arg handling #
 
 args=( "$@" )
@@ -76,7 +76,7 @@ for i in `seq 0 "$argnum"`
 	case $key1 in  ''|*[!0-9]*) 
 				#do nothing
 				;;     
-				*) INTERVAL=${args[$i]}; ITERATION=${args[(($i+1))]}; break
+				*) INTERVAL=${args[$i]}; ITERATION=${args[(($i+1))]}; D_INTERVAL=`echo $INTERVAL`;break
 				;; 
 	esac
 done
@@ -290,6 +290,12 @@ done
 
 
 function loop_data_capture_daemon() {
+#overwrite Interval with daemon interval
+if [ "$D_INTERVAL" == "5" ];then
+	sleep 0;
+else 
+	INTERVAL=`echo $D_INTERVAL`
+fi
 echo
 echo "Start collecting data."
 echo "Will be running in background as a daemn till terminated manualy, will collect data in $INTERVAL seconds interval"
@@ -298,6 +304,7 @@ echo
 
 logger perf.sh: "Start collecting data."
 logger perf.sh: "Will be running in background as a daemon till terminated manualy, will collect data in $INTERVAL seconds interval"
+
 
 #~~~ Continuous collection by will run outside loop ~~~
 #date >> $DIR/vmstat.out; vmstat $INTERVAL $ITERATION >> $DIR/vmstat.out &
@@ -309,7 +316,8 @@ fi
 sar $INTERVAL  >> $DIR/sar.out &
 sar -A $INTERVAL  -p >> $DIR/sarA.out &
 mpstat $INTERVAL  -P ALL >> $DIR/mpstat.out &
-nfsiostat $INTERVAL  >> $DIR/nfsiostat.out &
+#nfsiostat $INTERVAL  >> $DIR/nfsiostat.out &
+#
 #~~~
 
 # ~~~ Loop begins to collect data ~~~

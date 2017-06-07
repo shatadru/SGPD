@@ -1,4 +1,7 @@
 #!/bin/bash
+# Shatadru Bandyopadhyay
+# https://github.com/shatadru/SGPD/
+
 # Collects command outputs 
 
 host="$(hostname)"

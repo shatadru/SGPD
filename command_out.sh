@@ -5,8 +5,6 @@ host="$(hostname)"
 
 dir="/tmp/${host}_command_out"
 mkdir $dir
-cd $dir
-
 
 #### Commands to Run #####
 

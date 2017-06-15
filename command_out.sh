@@ -46,7 +46,13 @@ multipath -l &> multipath_l
 dmesg > dmesg
 tail -100 /var/log/messages > messages
 
+# Block 
 ls -laR /dev > ls_laR_dev
+lsblk > lsblk
+findmnt > findmnt
+
+
+# Archiving ...
 
 tar -cf /tmp/"$FILENAME" $DIR 2>/dev/null
 

@@ -275,6 +275,7 @@ do
 		date >> $DIR/free.out; free -m >> $DIR/free.out
 		date >> $DIR/psf.out; ps auxf >> $DIR/psf.out
 		date >> $DIR/ps_auxwwwm.out; ps auxwwwm >> $DIR/ps_auxwwwm.out
+		date >> $DIR/ps_-eL-w_-o_pid,ppid,tid,tgid,stat,pcpu,psr,vsz,rss,comm,cmd.out; ps -eL -w -o pid,ppid,tid,tgid,stat,pcpu,psr,vsz,rss,comm,cmd >> $DIR/ps_-eL-o_pid,ppid,tid,tgid,stat,pcpu,psr,vsz,rss,comm,cmd.out
 		date >> $DIR/ps.out  ; ps aux >> $DIR/ps.out  
 		((CURRENT_ITERATION++))
 		sleep $INTERVAL
